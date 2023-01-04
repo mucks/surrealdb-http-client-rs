@@ -34,7 +34,7 @@ mod test {
     async fn create() {
         let test: Test = client()
             .query("create test set username = $username")
-            .bind("$username", "test")
+            .bind("username", "test")
             .send()
             .await
             .unwrap()
@@ -47,7 +47,7 @@ mod test {
 
     #[tokio::test]
     async fn select() {
-        let test: Vec<Test> = client()
+        let _test: Vec<Test> = client()
             .query("SELECT * FROM test")
             .send()
             .await
@@ -60,7 +60,7 @@ mod test {
     async fn invalid_query() {
         if let Err(err) = client()
             .query("creeaate test set username = $username")
-            .bind("$username", "test")
+            .bind("username", "test")
             .send()
             .await
         {

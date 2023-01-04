@@ -22,7 +22,7 @@ let client = Client::new(cfg).unwrap();
 
 let test: Test = client
     .query("create test set username = $username")
-    .bind("$username", "test")
+    .bind("username", "test")
     .send()
     .await
     .unwrap()

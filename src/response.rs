@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait ResponseExt {
     fn get_result<T>(&self) -> Result<T>
@@ -43,11 +43,13 @@ impl ResponseExt for Vec<Response> {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Response {
     pub time: String,
     pub status: String,
     pub result: Option<Vec<serde_json::Value>>,
+    pub detail: Option<String>,
+    pub information: Option<String>,
 }
 
 impl Response {

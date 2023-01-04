@@ -4,6 +4,7 @@ use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 use crate::response::Response;
 
+#[derive(Debug, Default, Clone)]
 pub struct ClientConfig {
     pub host: String,
     pub username: String,
@@ -12,6 +13,7 @@ pub struct ClientConfig {
     pub database: String,
 }
 
+#[derive(Debug)]
 pub struct Query<'a> {
     sql: String,
     client: &'a Client,
@@ -23,9 +25,11 @@ impl<'a> Query<'a> {
     }
 
     pub fn bind(self, key: &str, value: &str) -> Self {
-        let escaped_value = &format!("\"{}\"", value);
+        let v = &format!("\"{}\"", value);
+        let k = &format!("${}", key);
+
         Self {
-            sql: self.sql.replace(key, escaped_value),
+            sql: self.sql.replace(k, v),
             client: self.client,
         }
     }
@@ -34,6 +38,7 @@ impl<'a> Query<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Client {
     _config: ClientConfig,
     client: hyper::Client<HttpsConnector<HttpConnector>>,
@@ -82,8 +87,17 @@ impl Client {
         let resp = self.client.request(req).await?;
         let body_bytes = hyper::body::to_bytes(resp.into_body()).await?;
         let out = String::from_utf8(body_bytes.to_vec())?;
-        let resp: Vec<Response> = match serde_json::from_str(&out) {
-            Ok(resp) => resp,
+        let resp = match serde_json::from_str::<Vec<Response>>(&out) {
+            Ok(resp) => {
+                if resp.is_empty() {
+                    return Err(anyhow!("No results found for query: {}", sql));
+                }
+                if resp[0].status != "OK" {
+                    let err = serde_json::to_string(&resp[0])?;
+                    return Err(anyhow!("response: {}\nsql: '{}'", err, sql));
+                }
+                resp
+            }
             Err(_) => return Err(anyhow!("{}", out)),
         };
         Ok(resp)
